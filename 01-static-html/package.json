@@ -2,12 +2,12 @@
   "name": "static-html",
   "version": "0.0.1",
   "scripts": {
-    "dev": "http-server src --port 3000",
+    "dev": "live-server --port=3000 --no-browser src",
     "build": "rm -rf dist && cp -R src dist"
   },
   "author": "Sean C Davis",
   "license": "MIT",
   "devDependencies": {
-    "http-server": "^14.1.1"
+    "live-server": "^1.2.2"
   }
 }
