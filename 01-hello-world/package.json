@@ -1,0 +1,13 @@
+{
+  "name": "01-hello-world",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "http-server src --port 3000",
+    "build": "rm -rf dist && cp -R src dist"
+  },
+  "author": "Sean C Davis",
+  "license": "MIT",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
