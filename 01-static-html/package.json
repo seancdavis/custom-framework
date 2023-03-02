@@ -1,5 +1,5 @@
 {
-  "name": "01-hello-world",
+  "name": "static-html",
   "version": "0.0.1",
   "scripts": {
     "dev": "http-server src --port 3000",
