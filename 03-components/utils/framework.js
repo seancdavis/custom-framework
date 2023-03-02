@@ -79,12 +79,7 @@ function buildSite() {
 }
 
 // In dev mode, watch for changes to content.json and rebuild
-if (IS_DEV) {
-  fs.watch(SRC_DIR, { recursive: true }, () => {
-    console.log('Detected file change. Rebuilding ...');
-    buildSite();
-  });
-}
+if (IS_DEV) fs.watch(SRC_DIR, { recursive: true }, buildSite);
 
 // Do initial build
 buildSite();
