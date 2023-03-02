@@ -29,7 +29,10 @@ function buildPage(relSrcFilePath) {
   // Escape if layout doesn't exist
   if (!layout) console.error(`Layout "${page.layout}" not found for page "${relSrcFilePath}"`);
   // Get and set urlPath on page from file path
-  const urlPath = relSrcFilePath.replace(/\.json$/, '.html');
+  const urlPath = relSrcFilePath
+    .replace(/\.json$/, '/index.html')
+    .replace(/\/index\/index\.html$/, '/index.html')
+    .replace(/^index\/index\.html$/, 'index.html');
   // Determine destination file path
   const distFilePath = path.join(DIST_DIR, urlPath);
   // Create directory if it doesn't exist
