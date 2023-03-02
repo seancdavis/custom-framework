@@ -8,7 +8,7 @@ import glob from 'fast-glob';
 const IS_DEV = process.argv.includes('dev');
 const SRC_DIR = path.join(process.cwd(), 'src');
 const DIST_DIR = path.join(process.cwd(), 'dist');
-const CONTENT_DIR = path.join(SRC_DIR, 'content');
+const PAGES_DIR = path.join(SRC_DIR, 'content/pages');
 const LAYOUTS_DIR = path.join(SRC_DIR, 'layouts');
 const COMPONENTS_DIR = path.join(SRC_DIR, 'components');
 
@@ -22,7 +22,7 @@ fs.mkdirSync(DIST_DIR);
 
 function buildPage(relSrcFilePath) {
   // Parse page and retrieve layout
-  const absSrcFilePath = path.join(CONTENT_DIR, relSrcFilePath);
+  const absSrcFilePath = path.join(PAGES_DIR, relSrcFilePath);
   const rawPageContent = fs.readFileSync(absSrcFilePath, 'utf-8').toString();
   const page = JSON.parse(rawPageContent);
   const layout = layouts[page.layout];
@@ -74,7 +74,7 @@ function buildSite() {
   updateLayouts();
   updateComponents();
   // Get page files
-  const pageFiles = glob.sync('**/*.json', { cwd: CONTENT_DIR });
+  const pageFiles = glob.sync('**/*.json', { cwd: PAGES_DIR });
   // Build each page
   pageFiles.forEach(buildPage);
   // Provide feedback
