@@ -1,6 +1,0 @@
-{
-  "pages": [
-    { "title": "Home Page", "urlPath": "/" },
-    { "title": "Interior Page", "urlPath": "/about" }
-  ]
-}
