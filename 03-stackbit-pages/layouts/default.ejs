@@ -7,8 +7,13 @@
     <title><%= page.title %></title>
   </head>
   <body>
-    <main data-sb-object-id="<%- page._id %>">
+    <main data-sb-object-id="<%- page._meta.id %>">
       <h1 data-sb-field-path=".title"><%= page.title %></h1>
+      <p>
+        The <code>lib/framework.js</code> script took the content from
+        <code><%- page._meta.id %></code> and ran it through <code>layouts/default.ejs</code> to
+        generate this page.
+      </p>
     </main>
   </body>
 </html>
