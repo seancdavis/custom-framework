@@ -6,6 +6,3 @@ node_modules/
 
 # build output
 dist/
-
-# Stackbit
-.stackbit/
