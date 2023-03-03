@@ -16,7 +16,6 @@ const LAYOUTS_DIR = path.join(process.cwd(), 'layouts');
 /* ----- References ----- */
 
 // Shared across multiple functions and are populated by update functions.
-
 let layouts = {};
 
 /* ----- Setup ----- */
@@ -32,7 +31,7 @@ fs.mkdirSync(DIST_DIR);
  * Update `layouts` reference. Called on initial build and whenever a layout
  * file is changed.
  */
-function updateLayouts() {
+function updateLayoutsRef() {
   const layoutFiles = glob.sync('**/*.ejs', { cwd: LAYOUTS_DIR });
   layouts = Object.fromEntries(
     layoutFiles.map((filePath) => {
@@ -53,7 +52,7 @@ function updateLayouts() {
 const updateSite = (fileChanged, runUpdateLayouts = false) => {
   console.log(`File changed: ${fileChanged}`);
   // If layout file changed, rebuild the layouts reference
-  if (runUpdateLayouts) updateLayouts();
+  if (runUpdateLayouts) updateLayoutsRef();
   // Rebuild the site
   buildSite();
 };
@@ -87,6 +86,11 @@ function buildPage(relSrcFilePath) {
   const layout = layouts[page.layout];
   // Escape if layout doesn't exist
   if (!layout) console.error(`Layout "${page.layout}" not found for page "${relSrcFilePath}"`);
+  // Add meta information for the page
+  page._meta = {
+    // `id` is path from root of project (for inline editing)
+    id: path.relative(process.cwd(), absSrcFilePath),
+  };
   // Get and set urlPath on page from file path
   const urlPath = relSrcFilePath
     .replace(/\.json$/, '/index.html')
@@ -116,5 +120,5 @@ if (IS_DEV) {
 }
 
 // Do initial build
-updateLayouts();
+updateLayoutsRef();
 buildSite();
