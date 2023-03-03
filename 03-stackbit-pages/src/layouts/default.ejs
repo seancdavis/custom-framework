@@ -7,6 +7,8 @@
     <title><%= page.title %></title>
   </head>
   <body>
-    <h1><%= page.title %></h1>
+    <main data-sb-object-id="<%- page._id %>">
+      <h1 data-sb-field-path=".title"><%= page.title %></h1>
+    </main>
   </body>
 </html>

@@ -24,6 +24,8 @@ function buildPage(relSrcFilePath) {
   const rawPageContent = fs.readFileSync(absSrcFilePath, 'utf-8').toString();
   const page = JSON.parse(rawPageContent);
   const layout = layouts[page.layout];
+  // Add ID value as path from root of project (for inline editing)
+  page._id = path.relative(process.cwd(), absSrcFilePath);
   // Escape if layout doesn't exist
   if (!layout) console.error(`Layout "${page.layout}" not found for page "${relSrcFilePath}"`);
   // Get and set urlPath on page from file path
