@@ -2,22 +2,83 @@
 
 import ejs from 'ejs';
 import fs from 'fs';
-import path from 'path';
 import glob from 'fast-glob';
+import liveServer from 'live-server';
+import path from 'path';
+
+/* ----- Constants ----- */
 
 const IS_DEV = process.argv.includes('dev');
-const SRC_DIR = path.join(process.cwd(), 'src');
 const DIST_DIR = path.join(process.cwd(), 'dist');
-const PAGES_DIR = path.join(SRC_DIR, 'content/pages');
-const LAYOUTS_DIR = path.join(SRC_DIR, 'layouts');
+const PAGES_DIR = path.join(process.cwd(), 'content/pages');
+const LAYOUTS_DIR = path.join(process.cwd(), 'layouts');
 
-// Global refs — they get updated on each build
+/* ----- References ----- */
+
+// Shared across multiple functions and are populated by update functions.
+
 let layouts = {};
 
-// Prepare dist directory
+/* ----- Setup ----- */
+
+// Remove existing dist directory and built files
 if (fs.existsSync(DIST_DIR)) fs.rmSync(DIST_DIR, { recursive: true, force: true });
+// Create new dist directory
 fs.mkdirSync(DIST_DIR);
 
+/* ----- Updaters ----- */
+
+/**
+ * Update `layouts` reference. Called on initial build and whenever a layout
+ * file is changed.
+ */
+function updateLayouts() {
+  const layoutFiles = glob.sync('**/*.ejs', { cwd: LAYOUTS_DIR });
+  layouts = Object.fromEntries(
+    layoutFiles.map((filePath) => {
+      const layoutName = path.basename(filePath, '.ejs');
+      const layout = fs.readFileSync(path.join(LAYOUTS_DIR, filePath), 'utf-8').toString();
+      return [layoutName, layout];
+    }),
+  );
+}
+
+/**
+ * Function to call when a file changes while development server is running.
+ * Determines what to do based on the file that changed.
+ *
+ * @param {string} fileChanged - Path to file that changed
+ * @param {boolean} runUpdateLayouts - Whether to update layouts reference
+ */
+const updateSite = (fileChanged, runUpdateLayouts = false) => {
+  console.log(`File changed: ${fileChanged}`);
+  // If layout file changed, rebuild the layouts reference
+  if (runUpdateLayouts) updateLayouts();
+  // Rebuild the site
+  buildSite();
+};
+
+/* ----- Builders ----- */
+
+/**
+ * Retrieve all page files and build each page. Called on initial build and
+ * whenever a source file is changed.
+ */
+function buildSite() {
+  // Get page files
+  const pageFiles = glob.sync('**/*.json', { cwd: PAGES_DIR });
+  // Build each page
+  pageFiles.forEach(buildPage);
+  // Provide feedback
+  console.log(`Built ${pageFiles.length} pages`);
+}
+
+/**
+ * Reads page content, runs it through the proper layout, and writes the result
+ * to a file in the dist directory.
+ *
+ * @param {string} relSrcFilePath - Relative path to page file
+ */
 function buildPage(relSrcFilePath) {
   // Parse page and retrieve layout
   const absSrcFilePath = path.join(PAGES_DIR, relSrcFilePath);
@@ -41,30 +102,19 @@ function buildPage(relSrcFilePath) {
   fs.writeFileSync(distFilePath, html);
 }
 
-function updateLayouts() {
-  const layoutFiles = glob.sync('**/*.ejs', { cwd: LAYOUTS_DIR });
-  layouts = Object.fromEntries(
-    layoutFiles.map((filePath) => {
-      const layoutName = path.basename(filePath, '.ejs');
-      const layout = fs.readFileSync(path.join(LAYOUTS_DIR, filePath), 'utf-8').toString();
-      return [layoutName, layout];
-    }),
-  );
-}
+/* ----- Watchers / Callers ----- */
 
-function buildSite() {
-  // Update global refs
-  updateLayouts();
-  // Get page files
-  const pageFiles = glob.sync('**/*.json', { cwd: PAGES_DIR });
-  // Build each page
-  pageFiles.forEach(buildPage);
-  // Provide feedback
-  console.log(`Built ${pageFiles.length} pages`);
+if (IS_DEV) {
+  fs.watch(PAGES_DIR, { recursive: true }, (_, filename) => updateSite(filename));
+  fs.watch(LAYOUTS_DIR, { recursive: true }, (_, filename) => updateSite(filename, true));
+  liveServer.start({
+    port: 3000,
+    root: path.relative(process.cwd(), DIST_DIR),
+    open: false,
+    host: 'localhost',
+  });
 }
-
-// In dev mode, watch for changes to content.json and rebuild
-if (IS_DEV) fs.watch(SRC_DIR, { recursive: true }, buildSite);
 
 // Do initial build
+updateLayouts();
 buildSite();
