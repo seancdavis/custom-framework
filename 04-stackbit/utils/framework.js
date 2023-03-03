@@ -26,6 +26,8 @@ function buildPage(relSrcFilePath) {
   const rawPageContent = fs.readFileSync(absSrcFilePath, 'utf-8').toString();
   const page = JSON.parse(rawPageContent);
   const layout = layouts[page.layout];
+  // Add ID value as path from root of project (for inline editing)
+  page._id = path.relative(process.cwd(), absSrcFilePath);
   // Escape if layout doesn't exist
   if (!layout) console.error(`Layout "${page.layout}" not found for page "${relSrcFilePath}"`);
   // Get and set urlPath on page from file path
@@ -39,7 +41,7 @@ function buildPage(relSrcFilePath) {
   const dirPath = path.dirname(distFilePath);
   if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
   // Run page through EJS layout and write to file
-  const html = ejs.render(layout, { ...page, component: renderComponent });
+  const html = ejs.render(layout, { page, component: renderComponent });
   fs.writeFileSync(distFilePath, html);
 }
 
@@ -65,8 +67,8 @@ function updateComponents() {
   );
 }
 
-function renderComponent(props) {
-  return ejs.render(components[props.type], props);
+function renderComponent(props, _fieldPath) {
+  return ejs.render(components[props.type], { ...props, _fieldPath });
 }
 
 function buildSite() {
