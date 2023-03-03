@@ -1,7 +1,4 @@
-Simple example:
+Adds to #2:
 
-- Single layout
-- Single content file (JSON)
-- Watches for changes to `src` folder
-- Compiles to `dist` folder
-- Watches for changes to `dist` folder
+- Breaks out page content into individual JSON files
+- Introduces components, making pages composable

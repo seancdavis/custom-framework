@@ -1,7 +1,4 @@
-Simple example:
+Builds on #3:
 
-- Single layout
-- Single content file (JSON)
-- Watches for changes to `src` folder
-- Compiles to `dist` folder
-- Watches for changes to `dist` folder
+- Adds Stackbit
+- Moves pages into a deeper directory to help with Stackbit
