@@ -47,15 +47,15 @@ function updateLayoutsRef() {
  * Determines what to do based on the file that changed.
  *
  * @param {string} fileChanged - Path to file that changed
- * @param {boolean} runUpdateLayouts - Whether to update layouts reference
+ * @param {string} watchDir - Absolute path to directory being watched
  */
-const updateSite = (fileChanged, runUpdateLayouts = false) => {
-  console.log(`File changed: ${fileChanged}`);
-  // If layout file changed, rebuild the layouts reference
-  if (runUpdateLayouts) updateLayoutsRef();
-  // Rebuild the site
-  buildSite();
-};
+function updateSite(fileChanged, watchDir) {
+  console.log(`[Source Change] ${path.relative(process.cwd(), path.join(watchDir, fileChanged))}`);
+  // If layout file changed, rebuild the entire site
+  if (watchDir === LAYOUTS_DIR) return buildSite();
+  // Otherwise, just rebuild the page that changed
+  buildPage(fileChanged);
+}
 
 /* ----- Builders ----- */
 
@@ -64,6 +64,8 @@ const updateSite = (fileChanged, runUpdateLayouts = false) => {
  * whenever a source file is changed.
  */
 function buildSite() {
+  // Rebuild layouts reference
+  updateLayoutsRef();
   // Get page files
   const pageFiles = glob.sync('**/*.json', { cwd: PAGES_DIR });
   // Build each page
@@ -76,21 +78,10 @@ function buildSite() {
  * Reads page content, runs it through the proper layout, and writes the result
  * to a file in the dist directory.
  *
- * @param {string} relSrcFilePath - Relative path to page file
+ * @param {string} relSrcFilePath - Path to page file, relative to PAGES_DIR
  */
 function buildPage(relSrcFilePath) {
-  // Parse page and retrieve layout
   const absSrcFilePath = path.join(PAGES_DIR, relSrcFilePath);
-  const rawPageContent = fs.readFileSync(absSrcFilePath, 'utf-8').toString();
-  const page = JSON.parse(rawPageContent);
-  const layout = layouts[page.layout];
-  // Escape if layout doesn't exist
-  if (!layout) console.error(`Layout "${page.layout}" not found for page "${relSrcFilePath}"`);
-  // Add meta information for the page
-  page._meta = {
-    // `id` is path from root of project (for inline editing)
-    id: path.relative(process.cwd(), absSrcFilePath),
-  };
   // Get and set urlPath on page from file path
   const urlPath = relSrcFilePath
     .replace(/\.json$/, '/index.html')
@@ -98,6 +89,26 @@ function buildPage(relSrcFilePath) {
     .replace(/^index\/index\.html$/, 'index.html');
   // Determine destination file path
   const distFilePath = path.join(DIST_DIR, urlPath);
+  // If the source file doesn't exist, first delete the file in the dist if it
+  // exists, then return
+  if (!fs.existsSync(absSrcFilePath)) {
+    if (fs.existsSync(distFilePath)) fs.rmSync(distFilePath);
+    return;
+  }
+  // Parse page and retrieve layout
+  const rawPageContent = fs.readFileSync(absSrcFilePath, 'utf-8').toString();
+  const page = JSON.parse(rawPageContent);
+  const layout = layouts[page.layout];
+  // Escape if layout doesn't exist
+  if (!layout) {
+    console.log(`[Error] Layout "${page.layout}" not found for page "${relSrcFilePath}"`);
+    return;
+  }
+  // Add meta information for the page
+  page._meta = {
+    // `id` is path from root of project (for inline editing)
+    id: path.relative(process.cwd(), absSrcFilePath),
+  };
   // Create directory if it doesn't exist
   const dirPath = path.dirname(distFilePath);
   if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
@@ -109,8 +120,12 @@ function buildPage(relSrcFilePath) {
 /* ----- Watchers / Callers ----- */
 
 if (IS_DEV) {
-  fs.watch(PAGES_DIR, { recursive: true }, (_, filename) => updateSite(filename));
-  fs.watch(LAYOUTS_DIR, { recursive: true }, (_, filename) => updateSite(filename, true));
+  // Watch for changes to content source files and rebuild
+  fs.watch(PAGES_DIR, { recursive: true }, (_, filename) => updateSite(filename, PAGES_DIR));
+  // Watch for changes to layout files and rebuild
+  fs.watch(LAYOUTS_DIR, { recursive: true }, (_, filename) => updateSite(filename, LAYOUTS_DIR));
+  // Start development server, which serves from and watches for changes in the
+  // dist directory
   liveServer.start({
     port: 3000,
     root: path.relative(process.cwd(), DIST_DIR),
@@ -119,6 +134,6 @@ if (IS_DEV) {
   });
 }
 
-// Do initial build
+// Do the initial build
 updateLayoutsRef();
 buildSite();
