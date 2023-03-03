@@ -14,7 +14,7 @@ export const config = defineStackbitConfig({
       fields: [{ name: 'title', type: 'string', required: true }],
     },
   },
-  pagesDir: 'src/content/pages',
+  pagesDir: 'content/pages',
   pageLayoutKey: 'type',
   objectTypeKey: 'type',
 });
